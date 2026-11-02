@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../repositories/auth_repository.dart';
 import '../../core/routes/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/widgets.dart';
@@ -14,6 +14,9 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   String? _emailError;
+  bool _isLoading = false;
+  String? _infoMessage;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -21,17 +24,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final email = _emailController.text.trim();
 
     if (!email.contains('@') || !email.contains('.')) {
       setState(() => _emailError = 'Введіть коректний email');
       return;
     }
-    setState(() => _emailError = null);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Посилання для скидання пароля надіслано на $email')),
-    );
+    setState(() {
+      _emailError = null;
+      _isLoading = true;
+      _infoMessage = null;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthRepository.instance.sendPasswordResetEmail(email: email);
+      setState(() {
+        _infoMessage = 'Посилання для скидання пароля надіслано на $email';
+      });
+    } catch (e) {
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -53,6 +69,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_infoMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(_infoMessage!, style: const TextStyle(color: Colors.green)),
+                  ),
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                  ),
                 AppTextField(
                   label: 'Електронна пошта',
                   controller: _emailController,
@@ -64,9 +90,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
-                  label: 'Надіслати посилання',
+                  label: _isLoading ? 'Надсилання...' : 'Надіслати посилання',
                   icon: Icons.send_outlined,
-                  onPressed: _send,
+                  onPressed: _isLoading ? null : _send,
                 ),
                 const SizedBox(height: 16),
                 Center(

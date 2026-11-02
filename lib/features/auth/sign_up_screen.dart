@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-
+import '../../repositories/auth_repository.dart';
 import '../../core/routes/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/widgets.dart';
+import '../profile/widgets/password_requirements.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -12,8 +13,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  static const String _registeredEmail = 'olena.kovalchuk@example.com';
-
+  final _formKey = GlobalKey<FormState>();
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _phone = TextEditingController();
@@ -21,12 +21,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _password = TextEditingController();
   final _confirm = TextEditingController();
 
-  String? _firstNameError;
-  String? _lastNameError;
-  String? _phoneError;
-  String? _emailError;
-  String? _passwordError;
-  String? _confirmError;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -39,41 +35,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  String? _required(String value) =>
-      value.trim().isEmpty ? "Обов'язкове поле" : null;
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? "Обов'язкове поле" : null;
 
-  void _submit() {
-    final email = _email.text.trim();
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _firstNameError = _required(_firstName.text);
-      _lastNameError = _required(_lastName.text);
-      _phoneError = _required(_phone.text);
+    setState(() => _errorMessage = null);
 
-      if (email.isEmpty) {
-        _emailError = "Обов'язкове поле";
-      } else if (email == _registeredEmail) {
-        _emailError = 'Цей email вже зареєстрований у системі';
-      } else {
-        _emailError = null;
-      }
+    setState(() => _isLoading = true);
 
-      _passwordError = _password.text.length < 8 ? 'Мінімум 8 символів' : null;
-      _confirmError =
-          _confirm.text != _password.text ? 'Паролі не збігаються' : null;
-    });
+    try {
+      final email = _email.text.trim();
+      final fullName = '${_firstName.text.trim()} ${_lastName.text.trim()}';
+      await AuthRepository.instance.signUp(
+        email: email,
+        password: _password.text,
+        fullName: fullName,
+      );
 
-    final hasErrors = [
-      _firstNameError,
-      _lastNameError,
-      _phoneError,
-      _emailError,
-      _passwordError,
-      _confirmError,
-    ].any((e) => e != null);
-
-    if (!hasErrors) {
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, RouteNames.dashboard);
+    } catch (e) {
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -82,9 +68,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return AuthScaffold(
       maxWidth: 440,
       child: AuthCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             const AuthHeader(
               overline: 'VOLUNTEERHUB',
               title: 'Реєстрація',
@@ -94,6 +82,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
               iconColor: AppColors.primary,
             ),
             const SizedBox(height: 24),
+            if (_errorMessage != null) ...[
+              ErrorBanner(
+                title: 'Помилка реєстрації',
+                message: _errorMessage!,
+                onClose: () => setState(() => _errorMessage = null),
+              ),
+              const SizedBox(height: 16),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -101,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: AppTextField(
                     label: "Ім'я",
                     controller: _firstName,
-                    errorText: _firstNameError,
+                    validator: (value) => _required(value),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -109,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: AppTextField(
                     label: 'Прізвище',
                     controller: _lastName,
-                    errorText: _lastNameError,
+                    validator: (value) => _required(value),
                   ),
                 ),
               ],
@@ -119,31 +115,44 @@ class _SignUpScreenState extends State<SignUpScreen> {
               label: 'Контактний номер',
               controller: _phone,
               keyboardType: TextInputType.phone,
-              errorText: _phoneError,
+              validator: (value) => _required(value),
             ),
             const SizedBox(height: 16),
             AppTextField(
               label: 'Електронна пошта (Email)',
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              errorText: _emailError,
+              validator: (value) {
+                final email = value?.trim() ?? '';
+                if (email.isEmpty) return "Обов'язкове поле";
+                if (!email.contains('@') || !email.contains('.')) {
+                  return 'Введіть коректний email';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             AppTextField(
               label: 'Пароль',
               controller: _password,
               isPassword: true,
-              errorText: _passwordError,
+              validator: (value) =>
+                  PasswordRequirements.validate(value ?? ''),
             ),
             const SizedBox(height: 16),
             AppTextField(
               label: 'Підтвердження пароля',
               controller: _confirm,
               isPassword: true,
-              errorText: _confirmError,
+              validator: (value) => value != _password.text
+                  ? 'Паролі не збігаються'
+                  : null,
             ),
             const SizedBox(height: 24),
-            PrimaryButton(label: 'Зареєструватися', onPressed: _submit),
+            PrimaryButton(
+              label: _isLoading ? 'Завантаження...' : 'Зареєструватися',
+              onPressed: _isLoading ? null : _submit,
+            ),
             const SizedBox(height: 16),
             AuthLinkRow(
               text: 'Вже маєте акаунт?',
@@ -151,7 +160,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onTap: () =>
                   Navigator.pushReplacementNamed(context, RouteNames.login),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

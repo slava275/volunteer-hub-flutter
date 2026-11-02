@@ -5,10 +5,28 @@ import '../../../core/theme/app_colors.dart';
 class PasswordRequirements extends StatelessWidget {
   const PasswordRequirements({super.key});
 
+  static String? validate(String password) {
+    final missingRequirements = <String>[];
+
+    if (password.length < 8) {
+      missingRequirements.add('мінімум 8 символів');
+    }
+    if (!RegExp(r'[A-ZА-ЯІЇЄ]').hasMatch(password) ||
+        !RegExp(r'[a-zа-яіїє]').hasMatch(password)) {
+      missingRequirements.add('великі та малі літери');
+    }
+    if (!RegExp(r'\d').hasMatch(password)) {
+      missingRequirements.add('цифру');
+    }
+
+    if (missingRequirements.isEmpty) return null;
+    return 'Пароль має містити: ${missingRequirements.join(', ')}.';
+  }
+
   static const _items = [
     '8+ символів',
     'Великі та малі літери',
-    'Цифри та спецсимволи',
+    'Цифри',
   ];
 
   @override

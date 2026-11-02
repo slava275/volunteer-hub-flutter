@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "187125886185",
+    "project_id": "kpp-volunteerhub",
+    "storage_bucket": "kpp-volunteerhub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:187125886185:android:47762dcc72d5f5025cd478",
+        "android_client_info": {
+          "package_name": "com.example.volunteerhub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKo1vDr0mzY-1x5vIv6n8Gt4aDz__hz1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

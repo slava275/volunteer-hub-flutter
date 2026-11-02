@@ -7,16 +7,16 @@ class AvatarCard extends StatelessWidget {
   const AvatarCard({
     super.key,
     required this.name,
-    required this.role,
     required this.initials,
+    this.photoUrl,
     required this.uploadProgress,
     required this.fileName,
     this.onChangePhoto,
   });
 
   final String name;
-  final String role;
   final String initials;
+  final String? photoUrl;
 
   final double uploadProgress;
   final String fileName;
@@ -35,23 +35,29 @@ class AvatarCard extends StatelessWidget {
               height: 128,
               child: Stack(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.tonal, width: 4),
-                    ),
-                    child: CircleAvatar(
-                      radius: 56,
-                      backgroundColor: AppColors.tonal,
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 40,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
+                  Center(
+                    child: photoUrl != null && photoUrl!.isNotEmpty
+                        ? ClipOval(
+                            child: Image.network(
+                              photoUrl!,
+                              width: 112,
+                              height: 112,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _fallbackAvatar(),
+                            ),
+                          )
+                        : Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.tonal,
+                                width: 4,
+                              ),
+                            ),
+                            child: _fallbackAvatar(),
+                          ),
                   ),
                   const Positioned(
                     right: 2,
@@ -59,8 +65,11 @@ class AvatarCard extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: AppColors.primary,
-                      child: Icon(Icons.photo_camera,
-                          size: 18, color: Colors.white),
+                      child: Icon(
+                        Icons.photo_camera,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -78,11 +87,6 @@ class AvatarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            role,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
           const SizedBox(height: 20),
           _UploadProgress(progress: uploadProgress, fileName: fileName),
           const SizedBox(height: 16),
@@ -99,6 +103,17 @@ class AvatarCard extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _fallbackAvatar() {
+    return CircleAvatar(
+      radius: 56,
+      backgroundColor: AppColors.tonal,
+      child: Text(
+        initials,
+        style: const TextStyle(fontSize: 40, color: AppColors.primary),
       ),
     );
   }
@@ -154,7 +169,10 @@ class _UploadProgress extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             fileName,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

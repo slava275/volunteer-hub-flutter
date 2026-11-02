@@ -18,6 +18,7 @@ class AppTextField extends StatefulWidget {
     this.keyboardType,
     this.onChanged,
     this.onTap,
+    this.validator,
   });
 
   final String label;
@@ -32,6 +33,7 @@ class AppTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
   final GestureTapCallback? onTap;
+  final FormFieldValidator<String>? validator;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -40,7 +42,9 @@ class AppTextField extends StatefulWidget {
 class _AppTextFieldState extends State<AppTextField> {
   bool _obscure = true;
 
-  static const _radius = BorderRadius.all(Radius.circular(AppSpacing.fieldRadius));
+  static const _radius = BorderRadius.all(
+    Radius.circular(AppSpacing.fieldRadius),
+  );
 
   Widget? _buildSuffix() {
     if (widget.isPassword) {
@@ -62,13 +66,14 @@ class _AppTextFieldState extends State<AppTextField> {
   Widget build(BuildContext context) {
     final hasError = widget.errorText != null;
 
-    return TextField(
+    return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword && _obscure,
       readOnly: widget.readOnly,
       keyboardType: widget.keyboardType,
       onChanged: widget.onChanged,
       onTap: widget.onTap,
+      validator: widget.validator,
       style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: widget.label,
@@ -86,8 +91,10 @@ class _AppTextFieldState extends State<AppTextField> {
         errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
         filled: true,
         fillColor: hasError ? AppColors.errorField : AppColors.fieldFill,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         prefixIcon: widget.prefixIcon == null
             ? null
             : Icon(widget.prefixIcon, color: AppColors.textSecondary),
