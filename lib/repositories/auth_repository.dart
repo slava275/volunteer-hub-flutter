@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -57,27 +56,6 @@ class AuthRepository {
     } catch (e, stack) {
       await _recordNonFatalError(e, stack, 'Невідома помилка входу');
       throw 'Не вдалося увійти. Перевірте з\'єднання з мережею.';
-    }
-  }
-
-  /// Вхід через Google (OAuth)
-  Future<UserCredential> signInWithGoogle() async {
-    try {
-      final googleProvider = GoogleAuthProvider();
-      UserCredential credential;
-      if (kIsWeb) {
-        credential = await _auth.signInWithPopup(googleProvider);
-      } else {
-        credential = await _auth.signInWithProvider(googleProvider);
-      }
-      await _analytics.logLogin(loginMethod: 'google');
-      return credential;
-    } on FirebaseAuthException catch (e, stack) {
-      await _recordNonFatalError(e, stack, 'Помилка Google-авторизації');
-      throw _mapAuthError(e.code);
-    } catch (e, stack) {
-      await _recordNonFatalError(e, stack, 'Невідома помилка Google Sign-In');
-      throw 'Не вдалося виконати вхід через Google.';
     }
   }
 

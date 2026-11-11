@@ -17,6 +17,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthRepository _authRepo = AuthRepository.instance;
+  final _passwordFormKey = GlobalKey<FormState>();
+  static const _predefinedAvatars = [
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrvBWmIiCcAQlb80ExmGotyPdWn7wGGDcoqb-VBMoWWQ&s=10',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqaC1Uf3FngrWyCgf-vG0g3R0MA_71qq-tLaWfiw9YcQ&s=10',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmEPrSVzghSjjw5qd4t6Y0klMm5TMBoyG9SHl78Z60qQ&s=10',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-MV7nUlh7aMCvHyaxC278FZDvRzulNBK9yuvRZ8vcNg&s=10',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQgQWPEitOAuacniE-QGZSWk5C6-U2we82kvBJJgv-0eQ&s=10',
+  ];
 
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
@@ -58,8 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _newPassword = TextEditingController();
   final TextEditingController _confirmPassword = TextEditingController();
 
-  String? _newPasswordError;
-  String? _confirmError;
   bool _isLoading = false;
 
   @override
@@ -81,8 +87,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _currentPassword.clear();
       _newPassword.clear();
       _confirmPassword.clear();
-      _newPasswordError = null;
-      _confirmError = null;
     });
   }
 
@@ -111,39 +115,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Зміна фото профілю'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Введіть HTTPS-посилання на зображення:'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: 'HTTPS посилання',
-                border: OutlineInputBorder(),
-              ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, dialogSetState) => AlertDialog(
+          title: const Text('Зміна фото профілю'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Оберіть готовий аватар:'),
+                const SizedBox(height: 12),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final avatarUrl in _predefinedAvatars)
+                      _buildAvatarOption(
+                        avatarUrl,
+                        selected: urlController.text == avatarUrl,
+                        onTap: () {
+                          urlController.text = avatarUrl;
+                          dialogSetState(() {});
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text('Або введіть HTTPS-посилання:'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  onChanged: (_) => dialogSetState(() {}),
+                  decoration: const InputDecoration(
+                    labelText: 'HTTPS посилання',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Скасувати'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newUrl = urlController.text.trim();
+                Navigator.pop(context);
+                if (newUrl.isNotEmpty) {
+                  await _updatePhotoUrl(newUrl);
+                }
+              },
+              child: const Text('Зберегти'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Скасувати'),
+      ),
+    ).then((_) => urlController.dispose());
+  }
+
+  Widget _buildAvatarOption(
+    String avatarUrl, {
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? AppColors.primary : Colors.transparent,
+            width: 3,
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final newUrl = urlController.text.trim();
-              Navigator.pop(context);
-              if (newUrl.isNotEmpty) {
-                await _updatePhotoUrl(newUrl);
-              }
-            },
-            child: const Text('Зберегти'),
+        ),
+        child: ClipOval(
+          child: Image.network(
+            avatarUrl,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const CircleAvatar(radius: 28, child: Icon(Icons.person)),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -172,19 +230,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _save() async {
-    final wantsNewPassword = _newPassword.text.isNotEmpty;
+    if (!_passwordFormKey.currentState!.validate()) return;
 
-    setState(() {
-      _newPasswordError = wantsNewPassword
-          ? PasswordRequirements.validate(_newPassword.text)
-          : null;
-      _confirmError =
-          wantsNewPassword && _confirmPassword.text != _newPassword.text
-          ? 'Паролі не збігаються'
-          : null;
-    });
-
-    if (_newPasswordError != null || _confirmError != null) return;
+    final wantsNewPassword =
+        _currentPassword.text.isNotEmpty ||
+        _newPassword.text.isNotEmpty ||
+        _confirmPassword.text.isNotEmpty;
 
     setState(() => _isLoading = true);
 
@@ -220,6 +271,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  bool _hasPasswordInput() =>
+      _currentPassword.text.isNotEmpty ||
+      _newPassword.text.isNotEmpty ||
+      _confirmPassword.text.isNotEmpty;
 
   Widget _responsiveRow(List<Widget> children, {double breakpoint = 560}) {
     return LayoutBuilder(
@@ -276,10 +332,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       name: displayName,
                       initials: initials,
                       photoUrl: photoUrl,
-                      uploadProgress: photoUrl != null && photoUrl.isNotEmpty
-                          ? 1.0
-                          : 0.75,
-                      fileName: 'portrait_2025_hq.jpg',
                       onChangePhoto: _openPhotoDialog,
                     ),
                   ],
@@ -300,9 +352,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildPersonalCard(),
                 const SizedBox(height: 24),
-                _buildPasswordCard(),
-                const SizedBox(height: 24),
-                _buildActions(),
+                Form(
+                  key: _passwordFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPasswordCard(),
+                      const SizedBox(height: 24),
+                      _buildActions(),
+                    ],
+                  ),
+                ),
               ],
             );
 
@@ -462,20 +522,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: 'Поточний пароль',
               controller: _currentPassword,
               isPassword: true,
+              validator: (value) =>
+                  _hasPasswordInput() && (value == null || value.isEmpty)
+                  ? "Введіть поточний пароль"
+                  : null,
             ),
             AppTextField(
               label: 'Новий пароль',
               hint: 'Мінімум 8 символів',
               controller: _newPassword,
               isPassword: true,
-              errorText: _newPasswordError,
+              validator: (value) {
+                final password = value ?? '';
+                if (!_hasPasswordInput() || password.isNotEmpty) {
+                  return _hasPasswordInput()
+                      ? PasswordRequirements.validate(password)
+                      : null;
+                }
+                return 'Введіть новий пароль';
+              },
             ),
             AppTextField(
               label: 'Підтвердження',
               hint: 'Повторіть пароль',
               controller: _confirmPassword,
               isPassword: true,
-              errorText: _confirmError,
+              validator: (value) {
+                final confirmation = value ?? '';
+                if (!_hasPasswordInput()) return null;
+                if (confirmation.isEmpty) return 'Підтвердіть новий пароль';
+                if (confirmation != _newPassword.text) {
+                  return 'Паролі не збігаються';
+                }
+                return null;
+              },
             ),
           ], breakpoint: 640),
           const SizedBox(height: 16),

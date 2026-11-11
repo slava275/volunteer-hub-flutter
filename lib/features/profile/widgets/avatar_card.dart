@@ -9,8 +9,6 @@ class AvatarCard extends StatelessWidget {
     required this.name,
     required this.initials,
     this.photoUrl,
-    required this.uploadProgress,
-    required this.fileName,
     this.onChangePhoto,
   });
 
@@ -18,8 +16,6 @@ class AvatarCard extends StatelessWidget {
   final String initials;
   final String? photoUrl;
 
-  final double uploadProgress;
-  final String fileName;
   final VoidCallback? onChangePhoto;
 
   @override
@@ -87,8 +83,6 @@ class AvatarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const SizedBox(height: 20),
-          _UploadProgress(progress: uploadProgress, fileName: fileName),
           const SizedBox(height: 16),
           TonalButton(
             label: 'Змінити фото',
@@ -114,67 +108,6 @@ class AvatarCard extends StatelessWidget {
       child: Text(
         initials,
         style: const TextStyle(fontSize: 40, color: AppColors.primary),
-      ),
-    );
-  }
-}
-
-class _UploadProgress extends StatelessWidget {
-  const _UploadProgress({required this.progress, required this.fileName});
-
-  final double progress;
-  final String fileName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.fieldFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.sync, size: 14, color: AppColors.primary),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'Оновлення фото...',
-                  style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                ),
-              ),
-              Text(
-                '${(progress * 100).round()}%',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 5,
-              color: AppColors.primary,
-              backgroundColor: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            fileName,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }

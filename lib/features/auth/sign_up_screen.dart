@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../repositories/auth_repository.dart';
 import '../../core/routes/route_names.dart';
 import '../../core/theme/app_colors.dart';
@@ -73,93 +74,92 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            const AuthHeader(
-              overline: 'VOLUNTEERHUB',
-              title: 'Реєстрація',
-              subtitle: 'Створіть обліковий запис волонтера в системі',
-              icon: Icons.favorite,
-              iconBackground: AppColors.tonal,
-              iconColor: AppColors.primary,
-            ),
-            const SizedBox(height: 24),
-            if (_errorMessage != null) ...[
-              ErrorBanner(
-                title: 'Помилка реєстрації',
-                message: _errorMessage!,
-                onClose: () => setState(() => _errorMessage = null),
+              const AuthHeader(
+                overline: 'VOLUNTEERHUB',
+                title: 'Реєстрація',
+                subtitle: 'Створіть обліковий запис волонтера в системі',
+                icon: Icons.favorite,
+                iconBackground: AppColors.tonal,
+                iconColor: AppColors.primary,
+              ),
+              const SizedBox(height: 24),
+              if (_errorMessage != null) ...[
+                ErrorBanner(
+                  title: 'Помилка реєстрації',
+                  message: _errorMessage!,
+                  onClose: () => setState(() => _errorMessage = null),
+                ),
+                const SizedBox(height: 16),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      label: "Ім'я",
+                      controller: _firstName,
+                      validator: (value) => _required(value),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: AppTextField(
+                      label: 'Прізвище',
+                      controller: _lastName,
+                      validator: (value) => _required(value),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-            ],
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    label: "Ім'я",
-                    controller: _firstName,
-                    validator: (value) => _required(value),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: AppTextField(
-                    label: 'Прізвище',
-                    controller: _lastName,
-                    validator: (value) => _required(value),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              label: 'Контактний номер',
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              validator: (value) => _required(value),
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              label: 'Електронна пошта (Email)',
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                final email = value?.trim() ?? '';
-                if (email.isEmpty) return "Обов'язкове поле";
-                if (!email.contains('@') || !email.contains('.')) {
-                  return 'Введіть коректний email';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              label: 'Пароль',
-              controller: _password,
-              isPassword: true,
-              validator: (value) =>
-                  PasswordRequirements.validate(value ?? ''),
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              label: 'Підтвердження пароля',
-              controller: _confirm,
-              isPassword: true,
-              validator: (value) => value != _password.text
-                  ? 'Паролі не збігаються'
-                  : null,
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: _isLoading ? 'Завантаження...' : 'Зареєструватися',
-              onPressed: _isLoading ? null : _submit,
-            ),
-            const SizedBox(height: 16),
-            AuthLinkRow(
-              text: 'Вже маєте акаунт?',
-              linkText: 'Увійти',
-              onTap: () =>
-                  Navigator.pushReplacementNamed(context, RouteNames.login),
-            ),
+              AppTextField(
+                label: 'Контактний номер',
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                validator: (value) => _required(value),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Електронна пошта (Email)',
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  final email = value?.trim() ?? '';
+                  if (email.isEmpty) return "Обов'язкове поле";
+                  if (!email.contains('@') || !email.contains('.')) {
+                    return 'Введіть коректний email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Пароль',
+                controller: _password,
+                isPassword: true,
+                validator: (value) =>
+                    PasswordRequirements.validate(value ?? ''),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Підтвердження пароля',
+                controller: _confirm,
+                isPassword: true,
+                validator: (value) =>
+                    value != _password.text ? 'Паролі не збігаються' : null,
+              ),
+              const SizedBox(height: 24),
+              PrimaryButton(
+                label: _isLoading ? 'Завантаження...' : 'Зареєструватися',
+                onPressed: _isLoading ? null : _submit,
+              ),
+              const SizedBox(height: 16),
+              AuthLinkRow(
+                text: 'Вже маєте акаунт?',
+                linkText: 'Увійти',
+                onTap: () =>
+                    Navigator.pushReplacementNamed(context, RouteNames.login),
+              ),
             ],
           ),
         ),
